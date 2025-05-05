@@ -1,55 +1,95 @@
-const User=require("../models/User")
-const getAllUsers=async(req,res)=>{
-const users=await User.find().lean()
-if(!users.length){
-   return res.status(404).massage("there is no users")}
-    res.json(users)
-}
-const createNewUser=async(req,res)=>{
-const {name,phone,email,password,role}=req.body
-if(!name||!email||!phone||!password||!role||role!="volunteer"){
-    return res.status(404).massage("there is required details missing")}
-const newUser=await User.create(name,phone,email,password,role)
-res.json(newUser)
-}
-const getUser=async(req,res)=>{
-const {userid}=req.params
-const user=await User.findById(userid)
-if(!user){
-    return res.status(404).massage("you are not log in")}
-res.json(user)  
-}
-const updateUser=async(req,res)=>{
-    const {userid}=req.params
-    const {name,phone,email,password,role}=req.body
-    if(!name||!email||!phone||!password||!role){
-        return res.status(404).massage("there is required details missing")}
-    const user=await User.findById(userid)
-    if(!user){
-        return res.status(404).massage("you are not log in")}
-    user.name=name
-    user.email=email
-    user.phone=phone
-    user.password=password
-    user.role=role
-    const updateduser=user.save()
-    res.json(updateduser)  
-}
-const deleteUser=async(req,res)=>{
-const {userid}=req.params
-const user=await User.findById(userid)
-if(!user)
-    return res.status(404).massage("you are not log in")
+const Notification = require("../models/Notification");
 
-const reply=`User '${user.name}' ID ${user.id} deleted`
-    const result = await user.deleteOne()
-    res.json(reply)
-}
+const getAllNotifications = async (req, res) => {
+  try {
+    const notifications = await Notification.find().lean();
+    if (!notifications.length) {
+      return res.status(404).json({ message: "No notifications found" });
+    }
+    res.json(notifications);
+  } catch (err) {
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+};
+
+
+const createNewNotification = async (req, res) => {
+  try {
+    const { userId, message, emergencyId } = req.body;
+
+    if (!userId || !message || !emergencyId) {
+      return res.status(400).json({ message: "Missing required fields" });
+    }
+
+    const notification = await Notification.create({
+      userId,
+      message,
+      emergencyId,
+      isRead: false,
+      createdAt: new Date()
+    });
+
+    res.status(201).json(notification);
+  } catch (err) {
+    res.status(500).json({ message: "Failed to create notification", error: err.message });
+  }
+};
+
+
+const getNotification = async (req, res) => {
+  try {
+    const { notificationId } = req.params;
+    const notification = await Notification.findById(notificationId);
+    if (!notification) {
+      return res.status(404).json({ message: "Notification not found" });
+    }
+    res.json(notification);
+  } catch (err) {
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+};
+
+
+const updateNotification = async (req, res) => {
+  try {
+    const { notificationId } = req.params;
+    const { message, isRead } = req.body;
+
+    const notification = await Notification.findById(notificationId);
+    if (!notification) {
+      return res.status(404).json({ message: "Notification not found" });
+    }
+
+    if (message !== undefined) notification.message = message;
+    if (isRead !== undefined) notification.isRead = isRead;
+
+    const updated = await notification.save();
+    res.json(updated);
+  } catch (err) {
+    res.status(500).json({ message: "Failed to update notification", error: err.message });
+  }
+};
+
+
+const deleteNotification = async (req, res) => {
+  try {
+    const { notificationId } = req.params;
+    const notification = await Notification.findById(notificationId);
+    if (!notification) {
+      return res.status(404).json({ message: "Notification not found" });
+    }
+
+    await notification.deleteOne();
+    res.json({ message: `Notification ID ${notification._id} deleted` });
+  } catch (err) {
+    res.status(500).json({ message: "Failed to delete notification", error: err.message });
+  }
+};
 
 module.exports = {
-    getAllUsers,
-    createNewUser,
-    getUser,
-    updateUser,
-    deleteUser
-    }
+  getAllNotifications,
+  createNewNotification,
+  getNotification,
+  updateNotification,
+  deleteNotification
+};

@@ -1,55 +1,100 @@
-const User=require("../models/User")
-const getAllEmergency=async(req,res)=>{
-const users=await User.find().lean()
-if(!users.length){
-   return res.status(404).massage("there is no users")}
-    res.json(users)
-}
-const createNewEmergency=async(req,res)=>{
-const {name,phone,email,password,role}=req.body
-if(!name||!email||!phone||!password||!role||role!="volunteer"){
-    return res.status(404).massage("there is required details missing")}
-const newUser=await User.create(name,phone,email,password,role)
-res.json(newUser)
-}
-const getEmergency=async(req,res)=>{
-const {userid}=req.params
-const user=await User.findById(userid)
-if(!user){
-    return res.status(404).massage("you are not log in")}
-res.json(user)  
-}
-const updateEmergency=async(req,res)=>{
-    const {userid}=req.params
-    const {name,phone,email,password,role}=req.body
-    if(!name||!email||!phone||!password||!role){
-        return res.status(404).massage("there is required details missing")}
-    const user=await User.findById(userid)
-    if(!user){
-        return res.status(404).massage("you are not log in")}
-    user.name=name
-    user.email=email
-    user.phone=phone
-    user.password=password
-    user.role=role
-    const updateduser=user.save()
-    res.json(updateduser)  
-}
-const deleteEmergency=async(req,res)=>{
-const {userid}=req.params
-const user=await User.findById(userid)
-if(!user)
-    return res.status(404).massage("you are not log in")
+const Emergency = require("../models/Emergency");
 
-const reply=`User '${user.name}' ID ${user.id} deleted`
-    const result = await user.deleteOne()
-    res.json(reply)
-}
+const getAllEmergency = async (req, res) => {
+  try {
+    const emergencies = await Emergency.find().lean();
+    if (!emergencies.length) {
+      return res.status(404).json({ message: "No emergencies found" });
+    }
+    res.json(emergencies);
+  } catch (err) {
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+};
+
+const createNewEmergency = async (req, res) => {
+  try {
+    const { title, description, location, urgency, status } = req.body;
+
+    if (!title || !description ) {
+      return res.status(400).json({ message: "Missing required fields" });
+    }
+
+    const emergency = await Emergency.create({
+      title,
+      description,
+      location:location|| null,
+      urgency: urgency || 'medium',
+      status: status || 'open',
+      createdAt: new Date()
+    });
+
+    res.status(201).json(emergency);
+  } catch (err) {
+    res.status(500).json({ message: "Failed to create emergency", error: err.message });
+  }
+};
+
+const getEmergency = async (req, res) => {
+  try {
+    const { emergencyid } = req.params;
+    const emergency = await Emergency.findById(emergencyid);
+    if (!emergency) {
+      return res.status(404).json({ message: "Emergency not found" });
+    }
+    res.json(emergency);
+  } catch (err) {
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+};
+
+const updateEmergency = async (req, res) => {
+  try {
+    const { emergencyid } = req.params;
+    const { title, description, location, urgency, status, volunteersResponded } = req.body;
+
+    const emergency = await Emergency.findById(emergencyid);
+    if (!emergency) {
+      return res.status(404).json({ message: "Emergency not found" });
+    }
+
+    if (title) emergency.title = title;
+    if (description) emergency.description = description;
+    if (location) emergency.location = location;
+    if (urgency) emergency.urgency = urgency;
+    if (status) emergency.status = status;
+    emergency.updatedAt = new Date();
+
+    if (Array.isArray(volunteersResponded)) {
+      emergency.volunteersResponded.push(...volunteersResponded);
+    }
+
+    const updated = await emergency.save();
+    res.json(updated);
+  } catch (err) {
+    res.status(500).json({ message: "Failed to update emergency", error: err.message });
+  }
+};
+
+const deleteEmergency = async (req, res) => {
+  try {
+    const { emergencyid } = req.params;
+    const emergency = await Emergency.findById(emergencyid);
+    if (!emergency) {
+      return res.status(404).json({ message: "Emergency not found" });
+    }
+
+    await emergency.deleteOne();
+    res.json({ message: `Emergency '${emergency.title}' ID ${emergency._id} deleted` });
+  } catch (err) {
+    res.status(500).json({ message: "Failed to delete emergency", error: err.message });
+  }
+};
 
 module.exports = {
-    getAllEmergency,
-    createNewEmergency,
-    getEmergency,
-    updateEmergency,
-    deleteEmergency
-    }
+  getAllEmergency,
+  createNewEmergency,
+  getEmergency,
+  updateEmergency,
+  deleteEmergency
+};

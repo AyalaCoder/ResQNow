@@ -1,6 +1,6 @@
 const express=require ("express")
 const cors = require("cors")
-const bcrypt = require("cors")
+const bcrypt = require("bcrypt")
 
 const mongoose=require("mongoose")
 require ("dotenv").config()
@@ -24,8 +24,9 @@ app.use(bodyParser.json());
 
 app.use('/user',userRoutes)
 app.use('/emergency',emergencyRoutes)
-// app.use('/callHistory',callHistoryRoutes)
-// app.use('/notification',notificationRoutes)
+app.use('/callHistory',callHistoryRoutes)
+app.use('/notification',notificationRoutes)
+
 app.use('/auth',authRouter)
 app.use('/emergency',emergencyRoutes)
 mongoose.connection.once('open', () => {

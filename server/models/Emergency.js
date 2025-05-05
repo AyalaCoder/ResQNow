@@ -1,11 +1,15 @@
 const mongoose=require("mongoose")
 const emergencySchema=new mongoose.Schema({
-    title: String,           
-    description: String,       
-    address: String,          
-    location: {                
-      lat: Number,
-      lng: Number
+    title: {
+      type:String, 
+      required:true}, 
+
+    description: {
+      type:String, 
+      required:true},              
+    location: {               
+      lat: { type: Number, required: true },
+      lng: { type: Number, required: true }
     },
     urgency: {               
       type: String,
@@ -17,8 +21,7 @@ const emergencySchema=new mongoose.Schema({
       enum: ['open', 'closed'],
       default: 'open'
     },
-    createdAt: Date,         
-    updatedAt: Date,         
+    createdAt: Date,                
     volunteersResponded: [  
       {
         userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
